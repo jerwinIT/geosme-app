@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/business.dart';
 import '../widgets/business_card.dart';
 import '../data/dummy_data.dart';
+import '../services/business_filter_service.dart';
+import '../constants/app_colors.dart';
 
 class CategorySelector extends StatelessWidget {
   final List<String> categories;
@@ -30,9 +32,18 @@ class CategorySelector extends StatelessWidget {
             label: Text(category),
             selected: isSelected,
             onSelected: (_) => onCategorySelected(category),
-            selectedColor: Theme.of(context).colorScheme.primary,
+            selectedColor: AppColors.primary,
+            checkmarkColor: AppColors.textOnPrimary,
             labelStyle: TextStyle(
-              color: isSelected ? Colors.white : Colors.black,
+              color: isSelected
+                  ? AppColors.textOnPrimary
+                  : AppColors.textPrimary,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
+            backgroundColor: AppColors.surface,
+            side: BorderSide(
+              color: isSelected ? AppColors.primary : AppColors.borderLight,
+              width: 1,
             ),
           );
         },
@@ -54,9 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String selectedCategory = 'All';
 
   List<String> get categories {
-    final allCategories = dummyBusinesses.map((b) => b.category).toSet().toList();
-    allCategories.sort();
-    return ['All', ...allCategories];
+    return BusinessFilterService.getCategories(dummyBusinesses);
   }
 
   void updateSearch(String query) {
@@ -74,19 +83,56 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _filterBusinesses() {
-    filteredBusinesses = dummyBusinesses.where((business) {
-      final matchesCategory = selectedCategory == 'All' || business.category == selectedCategory;
-      final matchesQuery = business.name.toLowerCase().contains(searchQuery) ||
-          business.address.toLowerCase().contains(searchQuery);
-      return matchesCategory && matchesQuery;
-    }).toList();
+    filteredBusinesses = BusinessFilterService.filterBusinesses(
+      allBusinesses: dummyBusinesses,
+      searchQuery: searchQuery,
+      selectedCategory: selectedCategory,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("SME Feeds"),
+        title: Image.asset(
+          'assets/images/geosme-logo-light.png',
+          height: 40,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            // Fallback to text logo if image fails to load
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'GeoSME',
+                    style: TextStyle(
+                      color: AppColors.textOnPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Batangas',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        centerTitle: true,
       ),
       body: Column(
         children: [
@@ -110,7 +156,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
+            child: GridView.builder(
+              padding: EdgeInsets.all(12),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.75,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
               itemCount: filteredBusinesses.length,
               itemBuilder: (context, index) {
                 return BusinessCard(business: filteredBusinesses[index]);

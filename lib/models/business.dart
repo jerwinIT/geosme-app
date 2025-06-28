@@ -4,6 +4,7 @@ class Business {
   final String priceRange;
   final double rating;
   final String category;
+  final String? imageUrl; // Optional image URL
 
   Business({
     required this.name,
@@ -11,5 +12,6 @@ class Business {
     required this.priceRange,
     required this.rating,
     required this.category,
+    this.imageUrl, // Optional parameter
   });
 }
