@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
+import 'screens/landing_screen.dart';
 import 'constants/app_colors.dart';
 
 void main() {
@@ -12,9 +12,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'GeoSME Batangas',
-      home: const HomeScreen(),
+      home: const LandingScreen(),
       theme: ThemeData(
+        fontFamily: 'Poppins', // Default font family
         // Custom colors
         primaryColor: AppColors.primary, // Button color
         scaffoldBackgroundColor: AppColors.background, // App background
