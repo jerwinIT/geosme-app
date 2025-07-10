@@ -14,8 +14,15 @@ class AnalyticsNavigationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Analytics Dashboard'),
+        title: const Text(
+          'Analytics',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
@@ -23,26 +30,21 @@ class AnalyticsNavigationScreen extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Comprehensive Analytics',
+              'Choose an analytics view',
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Explore detailed insights about SMEs in Batangas',
-              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 24),
-            _buildAnalyticsGrid(context),
+            const SizedBox(height: 20),
+            Expanded(child: _buildAnalyticsGrid(context)),
           ],
         ),
       ),
@@ -52,50 +54,50 @@ class AnalyticsNavigationScreen extends StatelessWidget {
   Widget _buildAnalyticsGrid(BuildContext context) {
     final analyticsItems = [
       {
-        'title': 'SME Type Distribution',
-        'subtitle': 'Category analysis and business types',
+        'title': 'SME Types',
+        'subtitle': 'Business categories',
         'icon': Icons.category,
         'color': AppColors.primary,
         'screen': const SmeTypeAnalyticsScreen(),
       },
       {
-        'title': 'Geographic Concentration',
-        'subtitle': 'Business density and location analysis',
+        'title': 'Geographic',
+        'subtitle': 'Location analysis',
         'icon': Icons.map,
         'color': AppColors.success,
         'screen': const GeographicAnalyticsScreen(),
       },
       {
-        'title': 'Business Hotspots',
-        'subtitle': 'Clusters and concentration areas',
+        'title': 'Hotspots',
+        'subtitle': 'Business clusters',
         'icon': Icons.location_on,
         'color': AppColors.warning,
         'screen': const HotspotAnalyticsScreen(),
       },
       {
         'title': 'User Engagement',
-        'subtitle': 'User interaction and activity metrics',
+        'subtitle': 'Activity metrics',
         'icon': Icons.people,
         'color': AppColors.info,
         'screen': const UserEngagementAnalyticsScreen(),
       },
       {
-        'title': 'Opportunity Zones',
-        'subtitle': 'Market gaps and business opportunities',
+        'title': 'Opportunities',
+        'subtitle': 'Market gaps',
         'icon': Icons.trending_up,
         'color': AppColors.success,
         'screen': const OpportunityZonesAnalyticsScreen(),
       },
       {
-        'title': 'Comparative Analytics',
-        'subtitle': 'Municipality and category comparisons',
+        'title': 'Compare',
+        'subtitle': 'Analytics comparison',
         'icon': Icons.compare_arrows,
         'color': AppColors.primary,
         'screen': const ComparativeAnalyticsScreen(),
       },
       {
-        'title': 'Accessibility & Proximity',
-        'subtitle': 'Location-based accessibility analysis',
+        'title': 'Accessibility',
+        'subtitle': 'Proximity analysis',
         'icon': Icons.route,
         'color': AppColors.warning,
         'screen': const AccessibilityAnalyticsScreen(),
@@ -103,13 +105,11 @@ class AnalyticsNavigationScreen extends StatelessWidget {
     ];
 
     return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 1.2,
+        childAspectRatio: 1.1,
       ),
       itemCount: analyticsItems.length,
       itemBuilder: (context, index) {
@@ -121,8 +121,8 @@ class AnalyticsNavigationScreen extends StatelessWidget {
 
   Widget _buildAnalyticsCard(BuildContext context, Map<String, dynamic> item) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -130,20 +130,9 @@ class AnalyticsNavigationScreen extends StatelessWidget {
             MaterialPageRoute(builder: (context) => item['screen']),
           );
         },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                item['color'].withOpacity(0.1),
-                item['color'].withOpacity(0.05),
-              ],
-            ),
-          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -151,11 +140,11 @@ class AnalyticsNavigationScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: item['color'].withOpacity(0.1),
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(item['icon'], size: 32, color: item['color']),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 item['title'],
                 style: const TextStyle(
@@ -164,10 +153,8 @@ class AnalyticsNavigationScreen extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
                 item['subtitle'],
                 style: const TextStyle(
@@ -175,8 +162,6 @@ class AnalyticsNavigationScreen extends StatelessWidget {
                   color: AppColors.textSecondary,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

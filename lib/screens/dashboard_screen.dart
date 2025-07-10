@@ -765,7 +765,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const MarketTrendsScreen(),
+                builder: (context) => const AnalyticsNavigationScreen(),
               ),
             );
             break;
