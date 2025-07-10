@@ -104,8 +104,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     children: [
                       Image.asset(
-                        'assets/images/geosme-logo-dark.png',
-                        height: 70,
+                        'assets/images/geosme-logo-light.png',
+                        height: 40,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(

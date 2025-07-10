@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../constants/app_colors.dart';
+import '../data/dummy_data.dart';
+import '../models/business.dart';
 
 class BusinessDensityScreen extends StatefulWidget {
   const BusinessDensityScreen({super.key});
@@ -9,98 +12,234 @@ class BusinessDensityScreen extends StatefulWidget {
 }
 
 class _BusinessDensityScreenState extends State<BusinessDensityScreen> {
+  GoogleMapController? _mapController;
+  Set<Marker> _markers = {};
+  Set<Circle> _circles = {};
+  String selectedMunicipality = 'All';
   String selectedCategory = 'All';
-  final List<String> categories = [
-    'All',
-    'Restaurants',
-    'Retail',
-    'Services',
-    'Manufacturing',
-  ];
+  bool showHeatmap = true;
+
+  late final List<String> municipalities;
+  final List<String> categories = ['All', ...businessCategories];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Business Density'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+  void initState() {
+    super.initState();
+    municipalities = ['All', ...municipalities];
+    _initializeMap();
+  }
+
+  void _initializeMap() {
+    _updateMarkers();
+  }
+
+  void _updateMarkers() {
+    final businesses = _getFilteredBusinesses();
+    final markers = <Marker>{};
+    final circles = <Circle>{};
+
+    for (var business in businesses) {
+      final marker = Marker(
+        markerId: MarkerId(business.id),
+        position: LatLng(business.latitude, business.longitude),
+        infoWindow: InfoWindow(
+          title: business.name,
+          snippet: '${business.category} • ${business.municipality}',
+          onTap: () {
+            _showBusinessDetails(business);
+          },
         ),
+        icon: _getMarkerIcon(business.category),
+      );
+      markers.add(marker);
+
+      if (showHeatmap) {
+        final circle = Circle(
+          circleId: CircleId(business.id),
+          center: LatLng(business.latitude, business.longitude),
+          radius: 500, // 500 meters radius
+          fillColor: _getHeatmapColor(business.category).withOpacity(0.3),
+          strokeColor: _getHeatmapColor(business.category).withOpacity(0.5),
+          strokeWidth: 2,
+        );
+        circles.add(circle);
+      }
+    }
+
+    setState(() {
+      _markers = markers;
+      _circles = circles;
+    });
+  }
+
+  List<Business> _getFilteredBusinesses() {
+    return dummyBusinesses.where((business) {
+      final matchesMunicipality =
+          selectedMunicipality == 'All' ||
+          business.municipality == selectedMunicipality;
+      final matchesCategory =
+          selectedCategory == 'All' || business.category == selectedCategory;
+      return matchesMunicipality && matchesCategory;
+    }).toList();
+  }
+
+  BitmapDescriptor _getMarkerIcon(String category) {
+    switch (category) {
+      case 'Food & Beverage':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+      case 'Retail & Trade':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+      case 'Services':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+      case 'Manufacturing':
+        return BitmapDescriptor.defaultMarkerWithHue(
+          BitmapDescriptor.hueOrange,
+        );
+      case 'Agriculture':
+        return BitmapDescriptor.defaultMarkerWithHue(
+          BitmapDescriptor.hueYellow,
+        );
+      case 'Tourism & Hospitality':
+        return BitmapDescriptor.defaultMarkerWithHue(
+          BitmapDescriptor.hueViolet,
+        );
+      default:
+        return BitmapDescriptor.defaultMarker;
+    }
+  }
+
+  Color _getHeatmapColor(String category) {
+    switch (category) {
+      case 'Food & Beverage':
+        return Colors.red;
+      case 'Retail & Trade':
+        return Colors.blue;
+      case 'Services':
+        return Colors.green;
+      case 'Manufacturing':
+        return Colors.orange;
+      case 'Agriculture':
+        return Colors.yellow;
+      case 'Tourism & Hospitality':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _showBusinessDetails(Business business) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildBusinessDetailsSheet(business),
+    );
+  }
+
+  Widget _buildBusinessDetailsSheet(Business business) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.6,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      body: Column(
+      child: Column(
         children: [
-          // Category Filter
           Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                final isSelected = category == selectedCategory;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(category),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        selectedCategory = category;
-                      });
-                    },
-                    selectedColor: AppColors.primary,
-                    checkmarkColor: AppColors.textOnPrimary,
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? AppColors.textOnPrimary
-                          : AppColors.textPrimary,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                    ),
-                    backgroundColor: AppColors.surface,
-                    side: BorderSide(
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.borderLight,
-                    ),
-                  ),
-                );
-              },
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.borderLight,
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
-
-          // Map Container
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Heatmap Legend
-                  _buildLegend(),
-
+                  Text(
+                    business.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        business.municipality,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
-
-                  // Heatmap Visualization
-                  _buildHeatmap(),
-
-                  const SizedBox(height: 24),
-
-                  // Density Statistics
-                  _buildDensityStats(),
-
+                  _buildDetailRow('Category', business.category),
+                  _buildDetailRow('Address', business.address),
+                  _buildDetailRow('Price Range', business.priceRange),
+                  _buildDetailRow(
+                    'Rating',
+                    '${business.rating}/5.0 (${business.reviewCount} reviews)',
+                  ),
+                  if (business.phoneNumber != null)
+                    _buildDetailRow('Phone', business.phoneNumber!),
+                  if (business.email != null)
+                    _buildDetailRow('Email', business.email!),
                   const SizedBox(height: 16),
-
-                  // Top Areas
-                  _buildTopAreas(),
-
-                  const SizedBox(height: 16),
-
-                  // Business Clusters
-                  _buildBusinessClusters(),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            // TODO: Implement directions
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Directions coming soon!'),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.directions),
+                          label: const Text('Get Directions'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.textOnPrimary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            // TODO: Implement bookmark
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Bookmark feature coming soon!'),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.bookmark_border),
+                          label: const Text('Bookmark'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primary),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -110,404 +249,26 @@ class _BusinessDensityScreenState extends State<BusinessDensityScreen> {
     );
   }
 
-  Widget _buildLegend() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Density Legend',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: AppColors.success,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('High Density'),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: AppColors.warning,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Medium Density'),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: AppColors.error,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Low Density'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeatmap() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Batangas Business Density Map',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Simplified heatmap grid
-            Container(
-              height: 300,
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.borderLight),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 8,
-                  crossAxisSpacing: 1,
-                  mainAxisSpacing: 1,
-                ),
-                itemCount: 64,
-                itemBuilder: (context, index) {
-                  final density = _getDensityForIndex(index);
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: density.color,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${density.count}',
-                        style: const TextStyle(
-                          fontSize: 8,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Map labels
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Batangas City', style: TextStyle(fontSize: 12)),
-                const Text('Lipa City', style: TextStyle(fontSize: 12)),
-                const Text('Tanauan', style: TextStyle(fontSize: 12)),
-                const Text('San Jose', style: TextStyle(fontSize: 12)),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDensityStats() {
-    final stats = _getDensityStats();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Density Statistics',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatItem(
-                    'Total Businesses',
-                    '${stats.totalBusinesses}',
-                    Icons.business,
-                    AppColors.primary,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatItem(
-                    'Avg. Density',
-                    '${stats.averageDensity}/km²',
-                    Icons.density_medium,
-                    AppColors.info,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatItem(
-                    'High Density Areas',
-                    '${stats.highDensityAreas}',
-                    Icons.location_on,
-                    AppColors.success,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatItem(
-                    'Coverage Area',
-                    '${stats.coverageArea} km²',
-                    Icons.map,
-                    AppColors.warning,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTopAreas() {
-    final topAreas = _getTopAreas();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Top Business Areas',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...topAreas.map((area) => _buildAreaItem(area)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAreaItem(AreaData area) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderLight),
-      ),
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: area.color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(Icons.location_on, color: area.color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  area.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                Text(
-                  '${area.businessCount} businesses',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${area.density}/km²',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: area.color,
-                  fontSize: 14,
-                ),
-              ),
-              Text(
-                area.category,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: AppColors.textLight,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBusinessClusters() {
-    final clusters = _getBusinessClusters();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Business Clusters',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...clusters.map((cluster) => _buildClusterItem(cluster)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildClusterItem(ClusterData cluster) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cluster.color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: cluster.color.withOpacity(0.3)),
-      ),
-      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(cluster.icon, color: cluster.color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                cluster.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
               ),
-              const Spacer(),
-              Text(
-                '${cluster.businessCount} businesses',
-                style: TextStyle(
-                  color: cluster.color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            cluster.description,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(color: AppColors.textPrimary),
             ),
           ),
         ],
@@ -515,115 +276,117 @@ class _BusinessDensityScreenState extends State<BusinessDensityScreen> {
     );
   }
 
-  DensityData _getDensityForIndex(int index) {
-    // Simplified density calculation for demo
-    if (index < 16) return DensityData(15, AppColors.success); // High density
-    if (index < 32) return DensityData(8, AppColors.warning); // Medium density
-    if (index < 48) return DensityData(3, AppColors.error); // Low density
-    return DensityData(1, AppColors.borderLight); // Very low density
-  }
-
-  DensityStats _getDensityStats() {
-    return DensityStats(
-      totalBusinesses: 1247,
-      averageDensity: 45,
-      highDensityAreas: 8,
-      coverageArea: 3165,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Business Density Map'),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              showHeatmap ? Icons.layers : Icons.layers_outlined,
+              color: AppColors.primary,
+            ),
+            onPressed: () {
+              setState(() {
+                showHeatmap = !showHeatmap;
+                _updateMarkers();
+              });
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Filters
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: AppColors.surface,
+            child: Column(
+              children: [
+                // Municipality Filter
+                DropdownButtonFormField<String>(
+                  value: selectedMunicipality,
+                  decoration: const InputDecoration(
+                    labelText: 'Municipality',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: municipalities.map((municipality) {
+                    return DropdownMenuItem(
+                      value: municipality,
+                      child: Text(municipality),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedMunicipality = value!;
+                      _updateMarkers();
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                // Category Filter
+                DropdownButtonFormField<String>(
+                  value: selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: categories.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedCategory = value!;
+                      _updateMarkers();
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          // Map
+          Expanded(
+            child: GoogleMap(
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(13.7563, 121.0583), // Batangas City center
+                zoom: 10,
+              ),
+              onMapCreated: (controller) {
+                _mapController = controller;
+              },
+              markers: _markers,
+              circles: _circles,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: true,
+              zoomControlsEnabled: false,
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _mapController?.animateCamera(
+            CameraUpdate.newCameraPosition(
+              const CameraPosition(target: LatLng(13.7563, 121.0583), zoom: 10),
+            ),
+          );
+        },
+        backgroundColor: AppColors.primary,
+        child: const Icon(
+          Icons.center_focus_strong,
+          color: AppColors.textOnPrimary,
+        ),
+      ),
     );
   }
-
-  List<AreaData> _getTopAreas() {
-    return [
-      AreaData('Batangas City Center', 156, 89, 'Mixed', AppColors.primary),
-      AreaData('Lipa City Plaza', 134, 76, 'Retail', AppColors.success),
-      AreaData('Tanauan Market', 98, 67, 'Food', AppColors.warning),
-      AreaData('San Jose Industrial', 87, 54, 'Manufacturing', AppColors.info),
-    ];
-  }
-
-  List<ClusterData> _getBusinessClusters() {
-    return [
-      ClusterData(
-        'Food & Beverage Cluster',
-        'Restaurants, cafes, and food services',
-        45,
-        Icons.restaurant,
-        AppColors.primary,
-      ),
-      ClusterData(
-        'Retail Hub',
-        'Shopping centers and retail stores',
-        38,
-        Icons.shopping_cart,
-        AppColors.success,
-      ),
-      ClusterData(
-        'Service District',
-        'Professional and personal services',
-        32,
-        Icons.miscellaneous_services,
-        AppColors.info,
-      ),
-      ClusterData(
-        'Industrial Zone',
-        'Manufacturing and industrial businesses',
-        28,
-        Icons.factory,
-        AppColors.warning,
-      ),
-    ];
-  }
-}
-
-class DensityData {
-  final int count;
-  final Color color;
-
-  DensityData(this.count, this.color);
-}
-
-class DensityStats {
-  final int totalBusinesses;
-  final int averageDensity;
-  final int highDensityAreas;
-  final int coverageArea;
-
-  DensityStats({
-    required this.totalBusinesses,
-    required this.averageDensity,
-    required this.highDensityAreas,
-    required this.coverageArea,
-  });
-}
-
-class AreaData {
-  final String name;
-  final int businessCount;
-  final int density;
-  final String category;
-  final Color color;
-
-  AreaData(
-    this.name,
-    this.businessCount,
-    this.density,
-    this.category,
-    this.color,
-  );
-}
-
-class ClusterData {
-  final String name;
-  final String description;
-  final int businessCount;
-  final IconData icon;
-  final Color color;
-
-  ClusterData(
-    this.name,
-    this.description,
-    this.businessCount,
-    this.icon,
-    this.color,
-  );
 }

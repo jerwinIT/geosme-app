@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import 'login_screen.dart';
+import 'register_screen.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -16,38 +17,38 @@ class _LandingScreenState extends State<LandingScreen> {
   final List<OnboardingPage> _pages = [
     OnboardingPage(
       title: 'Welcome to GeoSME',
-      subtitle: 'Your gateway to SME insights in Batangas',
+      subtitle: 'Complete SME Directory of Batangas 2024',
       description:
-          'Discover, analyze, and connect with local businesses through our comprehensive platform.',
+          'Access the comprehensive directory of Small & Medium Enterprises in Batangas with detailed business information.',
       image: 'assets/images/geosme-logo-light.png',
       icon: Icons.business,
       color: AppColors.primary,
     ),
     OnboardingPage(
       title: 'Browse Local SMEs',
-      subtitle: 'Find businesses near you',
+      subtitle: 'Find businesses in Batangas',
       description:
-          'Search and explore local businesses with detailed information, ratings, and reviews.',
+          'Search and explore local businesses with detailed information, categories, and locations across Batangas.',
       image: null,
       icon: Icons.search,
       color: AppColors.success,
     ),
     OnboardingPage(
-      title: 'Market Insights',
-      subtitle: 'Stay ahead with analytics',
+      title: 'Business Distribution',
+      subtitle: 'View business density map',
       description:
-          'Get competitor analysis, market trends, and business density insights to make informed decisions.',
+          'Explore the geographical distribution of SMEs across different cities and municipalities in Batangas.',
       image: null,
-      icon: Icons.analytics,
+      icon: Icons.map,
       color: AppColors.info,
     ),
     OnboardingPage(
-      title: 'Connect & Engage',
-      subtitle: 'Build your network',
+      title: 'Complete Directory',
+      subtitle: 'All SMEs in one place',
       description:
-          'Leave reviews, share experiences, and connect with the local business community.',
+          'Comprehensive listing of 1,247 Small & Medium Enterprises across 8 cities in Batangas for 2024.',
       image: null,
-      icon: Icons.people,
+      icon: Icons.list_alt,
       color: AppColors.warning,
     ),
   ];
@@ -79,8 +80,120 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   void _getStarted() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    _showAuthOptions();
+  }
+
+  void _showAuthOptions() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.4,
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.borderLight,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Get Started with GeoSME',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Choose how you want to access the platform',
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 30),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.textOnPrimary,
+                      ),
+                      child: const Text(
+                        'Sign In',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                      ),
+                      child: const Text(
+                        'Create Account',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text(
+                      'Continue as Guest',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
     );
   }
 
@@ -96,7 +209,7 @@ class _LandingScreenState extends State<LandingScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: TextButton(
-                  onPressed: _getStarted,
+                  onPressed: _showAuthOptions,
                   child: const Text(
                     'Skip',
                     style: TextStyle(

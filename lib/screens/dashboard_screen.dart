@@ -1,148 +1,671 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../constants/app_colors.dart';
-import 'sme_feeds_screen.dart';
-import 'sme_browse_screen.dart';
-import 'competitor_analysis_screen.dart';
-import 'market_trends_screen.dart';
+import '../models/business.dart';
+import '../models/analytics.dart';
+import '../services/analytics_service.dart';
+import '../data/dummy_data.dart';
 import 'business_density_screen.dart';
+import 'market_trends_screen.dart';
+import 'competitor_analysis_screen.dart';
+import 'sme_browse_screen.dart';
+import 'bookmarks_screen.dart';
+import 'analytics_navigation_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  late BusinessAnalytics analytics;
+  late List<Business> businesses;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    // Simulate loading time
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    analytics = AnalyticsService.generateAnalytics();
+    businesses = dummyBusinesses;
+
+    setState(() {
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Image.asset(
-          'assets/images/geosme-logo-light.png',
-          height: 40,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'GeoSME',
-                    style: TextStyle(
-                      color: AppColors.textOnPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Batangas',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            );
-          },
+        title: const Text(
+          'GeoSME Dashboard',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
         ),
-        centerTitle: true,
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
+            icon: const Icon(Icons.bookmark, color: AppColors.primary),
             onPressed: () {
-              // TODO: Implement notifications
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications coming soon!')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BookmarksScreen(),
+                ),
               );
             },
           ),
           IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {
-              // TODO: Implement profile
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile coming soon!')),
-              );
-            },
+            icon: const Icon(Icons.refresh, color: AppColors.primary),
+            onPressed: _loadData,
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildWelcomeCard(),
+                    const SizedBox(height: 16),
+                    _buildQuickStats(),
+                    const SizedBox(height: 16),
+                    _buildCategoryDistributionChart(),
+                    const SizedBox(height: 16),
+                    _buildTopCategoriesCard(),
+                    const SizedBox(height: 16),
+                    _buildMunicipalityDensityCard(),
+                    const SizedBox(height: 16),
+                    _buildHotspotsCard(),
+                    const SizedBox(height: 16),
+                    _buildOpportunityZonesCard(),
+                    const SizedBox(height: 16),
+                    _buildAnalyticsOverviewCard(),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  Widget _buildWelcomeCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: const LinearGradient(
+            colors: [AppColors.primary, Color(0xFFb05a1a)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome Section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, Color(0xFFb05a1a)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            Row(
+              children: [
+                const Icon(Icons.analytics, color: Colors.white, size: 32),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Batangas SME Analytics',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${analytics.totalBusinesses} businesses across ${analytics.municipalityData.length} municipalities',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Welcome to GeoSME',
-                    style: TextStyle(
-                      color: AppColors.textOnPrimary,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Discover insights about SMEs in Batangas',
-                    style: TextStyle(
-                      color: AppColors.textOnPrimary.withOpacity(0.9),
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem(
+                  'Total SMEs',
+                  analytics.totalBusinesses.toString(),
+                  Icons.business,
+                ),
+                _buildStatItem(
+                  'Categories',
+                  analytics.categoryCount.length.toString(),
+                  Icons.category,
+                ),
+                _buildStatItem(
+                  'Municipalities',
+                  analytics.municipalityData.length.toString(),
+                  Icons.location_city,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem(
+                  'Near Highways',
+                  analytics.accessibility.totalBusinessesNearHighways
+                      .toString(),
+                  Icons.route,
+                ),
+                _buildStatItem(
+                  'Near Schools',
+                  analytics.accessibility.totalBusinessesNearSchools.toString(),
+                  Icons.school,
+                ),
+                _buildStatItem(
+                  'Tourist Areas',
+                  analytics.accessibility.totalBusinessesNearTouristZones
+                      .toString(),
+                  Icons.attractions,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: Colors.white70, size: 24),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickStats() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildQuickStatCard(
+            'Top Category',
+            analytics.topCategories.isNotEmpty
+                ? analytics.topCategories.first
+                : 'N/A',
+            Icons.trending_up,
+            AppColors.success,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildQuickStatCard(
+            'Avg Rating',
+            '${analytics.averageRatingByCategory.values.isNotEmpty ? (analytics.averageRatingByCategory.values.reduce((a, b) => a + b) / analytics.averageRatingByCategory.length).toStringAsFixed(1) : '0.0'}',
+            Icons.star,
+            AppColors.warning,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
               ),
             ),
+            Text(
+              title,
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-            const SizedBox(height: 24),
+  Widget _buildCategoryDistributionChart() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Business Category Distribution',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MarketTrendsScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text('View Details'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: PieChart(
+                PieChartData(
+                  sections: _buildPieChartSections(),
+                  centerSpaceRadius: 40,
+                  sectionsSpace: 2,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Quick Stats
+  List<PieChartSectionData> _buildPieChartSections() {
+    final colors = [
+      AppColors.primary,
+      AppColors.success,
+      AppColors.warning,
+      AppColors.info,
+      AppColors.error,
+      const Color(0xFF9C27B0),
+    ];
+
+    return analytics.categoryCount.entries.map((entry) {
+      final index = analytics.categoryCount.keys.toList().indexOf(entry.key);
+      final percentage = (entry.value / analytics.totalBusinesses * 100)
+          .round();
+
+      return PieChartSectionData(
+        color: colors[index % colors.length],
+        value: entry.value.toDouble(),
+        title: '$percentage%',
+        radius: 60,
+        titleStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildTopCategoriesCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             const Text(
-              'Quick Stats',
+              'Top Business Categories',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
+            ...analytics.topCategories.asMap().entries.map((entry) {
+              final index = entry.key;
+              final category = entry.value;
+              final count = analytics.categoryCount[category] ?? 0;
+
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  child: Text(
+                    '${index + 1}',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                title: Text(category),
+                subtitle: Text('$count businesses'),
+                trailing: Text(
+                  '${(count / analytics.totalBusinesses * 100).round()}%',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMunicipalityDensityCard() {
+    final sortedMunicipalities = analytics.municipalityData.entries.toList()
+      ..sort(
+        (a, b) => b.value.totalBusinesses.compareTo(a.value.totalBusinesses),
+      );
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Municipality Business Density',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BusinessDensityScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text('View Map'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...sortedMunicipalities.take(5).map((entry) {
+              final municipality = entry.key;
+              final data = entry.value;
+
+              return ListTile(
+                leading: const Icon(
+                  Icons.location_city,
+                  color: AppColors.primary,
+                ),
+                title: Text(municipality),
+                subtitle: Text('${data.totalBusinesses} businesses'),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${data.density.toStringAsFixed(1)}/km²',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHotspotsCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Business Hotspots',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CompetitorAnalysisScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text('View Analysis'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...analytics.hotspots.take(3).map((hotspot) {
+              return ListTile(
+                leading: const Icon(
+                  Icons.location_on,
+                  color: AppColors.warning,
+                ),
+                title: Text(hotspot.name),
+                subtitle: Text('${hotspot.businessCount} businesses'),
+                trailing: Text(
+                  '${hotspot.density.toStringAsFixed(1)}/km²',
+                  style: const TextStyle(
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOpportunityZonesCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Opportunity Zones',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...analytics.opportunityZones.take(3).map((zone) {
+              return ListTile(
+                leading: const Icon(
+                  Icons.trending_up,
+                  color: AppColors.success,
+                ),
+                title: Text('${zone.category} in ${zone.municipality}'),
+                subtitle: Text(
+                  '${zone.currentBusinesses} current, ${zone.potentialDemand} potential',
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  // Navigate to opportunity details
+                },
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsOverviewCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Analytics Overview',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AnalyticsNavigationScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text('View All Analytics'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
-                  child: _buildStatCard(
+                  child: _buildOverviewStat(
                     'Total SMEs',
-                    '1,247',
+                    analytics.totalBusinesses.toString(),
                     Icons.business,
                     AppColors.primary,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
-                  child: _buildStatCard(
-                    'Active Today',
-                    '89',
-                    Icons.trending_up,
+                  child: _buildOverviewStat(
+                    'Avg Rating',
+                    '${analytics.averageRatingByCategory.values.isNotEmpty ? (analytics.averageRatingByCategory.values.reduce((a, b) => a + b) / analytics.averageRatingByCategory.length).toStringAsFixed(1) : '0.0'}',
+                    Icons.star,
+                    AppColors.warning,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildOverviewStat(
+                    'Near Highways',
+                    analytics.accessibility.totalBusinessesNearHighways
+                        .toString(),
+                    Icons.route,
+                    AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildOverviewStat(
+                    'Near Schools',
+                    analytics.accessibility.totalBusinessesNearSchools
+                        .toString(),
+                    Icons.school,
                     AppColors.success,
                   ),
                 ),
@@ -152,143 +675,25 @@ class DashboardScreen extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _buildStatCard(
-                    'New This Week',
-                    '23',
-                    Icons.add_business,
-                    AppColors.info,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    'Growth Rate',
-                    '+12%',
-                    Icons.show_chart,
+                  child: _buildOverviewStat(
+                    'Tourist Zones',
+                    analytics.accessibility.totalBusinessesNearTouristZones
+                        .toString(),
+                    Icons.attractions,
                     AppColors.warning,
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 32),
-
-            // Main Navigation
-            const Text(
-              'SME Insights',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Navigation Grid
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.1,
-              children: [
-                _buildNavigationCard(
-                  context,
-                  'SME Feeds',
-                  'Latest updates from local businesses',
-                  Icons.feed,
-                  AppColors.primary,
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SmeFeedsScreen(),
-                    ),
-                  ),
-                ),
-                _buildNavigationCard(
-                  context,
-                  'Browse SMEs',
-                  'Discover and explore local businesses',
-                  Icons.search,
-                  AppColors.success,
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SmeBrowseScreen(),
-                    ),
-                  ),
-                ),
-                _buildNavigationCard(
-                  context,
-                  'Competitor Analysis',
-                  'Analyze your competition',
-                  Icons.analytics,
-                  AppColors.info,
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CompetitorAnalysisScreen(),
-                    ),
-                  ),
-                ),
-                _buildNavigationCard(
-                  context,
-                  'Market Trends',
-                  'Stay updated with market insights',
-                  Icons.trending_up,
-                  AppColors.warning,
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MarketTrendsScreen(),
-                    ),
-                  ),
-                ),
-                _buildNavigationCard(
-                  context,
-                  'Business Density',
-                  'View business distribution map',
-                  Icons.map,
-                  AppColors.primary,
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const BusinessDensityScreen(),
-                    ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildOverviewStat(
+                    'Transport Hubs',
+                    analytics.accessibility.totalBusinessesNearTransportHubs
+                        .toString(),
+                    Icons.local_shipping,
+                    AppColors.info,
                   ),
                 ),
               ],
-            ),
-
-            const SizedBox(height: 32),
-
-            // Recent Activity
-            const Text(
-              'Recent Activity',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildActivityCard(
-              'New restaurant opened in Lipa City',
-              '2 hours ago',
-              Icons.restaurant,
-            ),
-            const SizedBox(height: 8),
-            _buildActivityCard(
-              'Market trend report updated',
-              '5 hours ago',
-              Icons.assessment,
-            ),
-            const SizedBox(height: 8),
-            _buildActivityCard(
-              'Competitor analysis available',
-              '1 day ago',
-              Icons.compare_arrows,
             ),
           ],
         ),
@@ -296,152 +701,76 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(
-    String title,
+  Widget _buildOverviewStat(
+    String label,
     String value,
     IconData icon,
     Color color,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 
-  Widget _buildNavigationCard(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadowLight,
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+  Widget _buildBottomNavigationBar() {
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: AppColors.primary,
+      unselectedItemColor: AppColors.textSecondary,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.dashboard),
+          label: 'Dashboard',
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 32),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Browse'),
+        BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.analytics),
+          label: 'Analytics',
         ),
-      ),
-    );
-  }
-
-  Widget _buildActivityCard(String title, String time, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.primary, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  time,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textLight,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      ],
+      onTap: (index) {
+        switch (index) {
+          case 1:
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SmeBrowseScreen()),
+            );
+            break;
+          case 2:
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const BusinessDensityScreen(),
+              ),
+            );
+            break;
+          case 3:
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MarketTrendsScreen(),
+              ),
+            );
+            break;
+        }
+      },
     );
   }
 }

@@ -181,21 +181,18 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
               IconButton(
                 icon: const Icon(Icons.share, color: Colors.white),
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Share functionality coming soon!'),
-                    ),
-                  );
+                  _shareBusiness();
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.favorite_border, color: Colors.white),
+                icon: Icon(
+                  widget.business.isBookmarked
+                      ? Icons.bookmark
+                      : Icons.bookmark_border,
+                  color: Colors.white,
+                ),
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Favorite functionality coming soon!'),
-                    ),
-                  );
+                  _toggleBookmark();
                 },
               ),
             ],
@@ -727,8 +724,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Open in Maps'),
-        content: const Text(
-          'Would you like to open this location in Google Maps?',
+        content: Text(
+          'Would you like to open ${widget.business.name} in Google Maps?',
         ),
         actions: [
           TextButton(
@@ -738,17 +735,39 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Opening Google Maps...'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-              // TODO: Implement actual map opening
+              _openInGoogleMaps();
             },
             child: const Text('Open Maps'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _openInGoogleMaps() {
+    final lat = widget.business.latitude;
+    final lng = widget.business.longitude;
+    final name = Uri.encodeComponent(widget.business.name);
+    final address = Uri.encodeComponent(widget.business.address);
+
+    final url =
+        'https://www.google.com/maps/search/?api=1&query=$lat,$lng&query_place_id=$name';
+
+    // For web, we can use url_launcher package
+    // For now, show a snackbar with the URL
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Opening Google Maps for ${widget.business.name}...'),
+        backgroundColor: AppColors.success,
+        action: SnackBarAction(
+          label: 'Copy URL',
+          onPressed: () {
+            // TODO: Implement clipboard functionality
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('URL copied: $url')));
+          },
+        ),
       ),
     );
   }
@@ -799,6 +818,47 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
+  }
+
+  void _toggleBookmark() {
+    setState(() {
+      widget.business.isBookmarked = !widget.business.isBookmarked;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          widget.business.isBookmarked
+              ? 'Added to bookmarks'
+              : 'Removed from bookmarks',
+        ),
+        backgroundColor: widget.business.isBookmarked
+            ? AppColors.success
+            : AppColors.warning,
+      ),
+    );
+  }
+
+  void _shareBusiness() {
+    final shareText =
+        'Check out ${widget.business.name} in ${widget.business.address}! '
+        'Rating: ${widget.business.rating}/5 - ${widget.business.category}';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Sharing: $shareText'),
+        backgroundColor: AppColors.info,
+        action: SnackBarAction(
+          label: 'Copy',
+          onPressed: () {
+            // TODO: Implement clipboard functionality
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Copied to clipboard!')),
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 

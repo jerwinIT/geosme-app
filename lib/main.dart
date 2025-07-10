@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'GeoSME Batangas',
+      title: 'GeoSME Batangas 2024',
       home: const LandingScreen(),
       theme: ThemeData(
         fontFamily: 'Poppins', // Default font family

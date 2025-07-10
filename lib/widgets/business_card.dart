@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import '../models/business.dart';
+import '../constants/app_colors.dart';
 
-class BusinessCard extends StatelessWidget {
+class BusinessCard extends StatefulWidget {
   final Business business;
+  final VoidCallback? onBookmarkChanged;
 
-  const BusinessCard({Key? key, required this.business}) : super(key: key);
+  const BusinessCard({
+    super.key,
+    required this.business,
+    this.onBookmarkChanged,
+  });
 
+  @override
+  State<BusinessCard> createState() => _BusinessCardState();
+}
+
+class _BusinessCardState extends State<BusinessCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -26,9 +37,9 @@ class BusinessCard extends StatelessWidget {
                 // Business image or placeholder
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                  child: business.imageUrl != null
+                  child: widget.business.imageUrl != null
                       ? Image.network(
-                          business.imageUrl!,
+                          widget.business.imageUrl!,
                           width: double.infinity,
                           height: 120,
                           fit: BoxFit.cover,
@@ -90,7 +101,7 @@ class BusinessCard extends StatelessWidget {
                         Icon(Icons.star, size: 14, color: Colors.white),
                         SizedBox(width: 2),
                         Text(
-                          business.rating.toString(),
+                          widget.business.rating.toString(),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -98,6 +109,36 @@ class BusinessCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+                // Bookmark button
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        widget.business.isBookmarked =
+                            !widget.business.isBookmarked;
+                      });
+                      widget.onBookmarkChanged?.call();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(
+                        widget.business.isBookmarked
+                            ? Icons.bookmark
+                            : Icons.bookmark_border,
+                        size: 20,
+                        color: widget.business.isBookmarked
+                            ? AppColors.primary
+                            : Colors.grey[600],
+                      ),
                     ),
                   ),
                 ),
@@ -112,7 +153,7 @@ class BusinessCard extends StatelessWidget {
               children: [
                 // Business name
                 Text(
-                  business.name,
+                  widget.business.name,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -120,7 +161,7 @@ class BusinessCard extends StatelessWidget {
                 SizedBox(height: 4),
                 // Address
                 Text(
-                  business.address,
+                  widget.business.address,
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -135,7 +176,7 @@ class BusinessCard extends StatelessWidget {
                     border: Border.all(color: Colors.green[200]!),
                   ),
                   child: Text(
-                    business.priceRange,
+                    widget.business.priceRange,
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.green[700],

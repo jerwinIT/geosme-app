@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../constants/app_colors.dart';
+import '../models/analytics.dart';
+import '../services/analytics_service.dart';
+import '../data/dummy_data.dart';
 
 class CompetitorAnalysisScreen extends StatefulWidget {
   const CompetitorAnalysisScreen({super.key});
@@ -10,388 +14,488 @@ class CompetitorAnalysisScreen extends StatefulWidget {
 }
 
 class _CompetitorAnalysisScreenState extends State<CompetitorAnalysisScreen> {
-  String selectedIndustry = 'Restaurants';
-  final List<String> industries = [
-    'Restaurants',
-    'Retail',
-    'Services',
-    'Manufacturing',
-  ];
+  late BusinessAnalytics analytics;
+  String selectedMunicipality = 'All';
+  String selectedCategory = 'All';
+
+  @override
+  void initState() {
+    super.initState();
+    analytics = AnalyticsService.generateAnalytics();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Competitor Analysis'),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list, color: AppColors.primary),
+            onPressed: () {
+              _showFilterDialog();
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Industry Selector
+            _buildOverviewCard(),
+            const SizedBox(height: 16),
+            _buildHotspotsCard(),
+            const SizedBox(height: 16),
+            _buildCompetitionHeatmap(),
+            const SizedBox(height: 16),
+            _buildMarketSaturationCard(),
+            const SizedBox(height: 16),
+            _buildCompetitiveAdvantagesCard(),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverviewCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             const Text(
-              'Select Industry',
+              'Competitive Landscape',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildOverviewStat(
+                    'Hotspots',
+                    analytics.hotspots.length.toString(),
+                    Icons.location_on,
+                    AppColors.warning,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildOverviewStat(
+                    'Clusters',
+                    '${analytics.hotspots.where((h) => h.businessCount > 5).length}',
+                    Icons.group_work,
+                    AppColors.info,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
-            Container(
-              height: 50,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: industries.length,
-                itemBuilder: (context, index) {
-                  final industry = industries[index];
-                  final isSelected = industry == selectedIndustry;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(industry),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          selectedIndustry = industry;
-                        });
-                      },
-                      selectedColor: AppColors.primary,
-                      checkmarkColor: AppColors.textOnPrimary,
-                      labelStyle: TextStyle(
-                        color: isSelected
-                            ? AppColors.textOnPrimary
-                            : AppColors.textPrimary,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                      ),
-                      backgroundColor: AppColors.surface,
-                      side: BorderSide(
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.borderLight,
-                      ),
-                    ),
-                  );
-                },
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildOverviewStat(
+                    'Avg Density',
+                    '${(analytics.hotspots.map((h) => h.density).reduce((a, b) => a + b) / analytics.hotspots.length).toStringAsFixed(1)}/km²',
+                    Icons.density_medium,
+                    AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildOverviewStat(
+                    'Saturated Areas',
+                    '${analytics.hotspots.where((h) => h.density > 10).length}',
+                    Icons.warning,
+                    AppColors.error,
+                  ),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 24),
-
-            // Market Share Chart
-            _buildSectionCard(
-              'Market Share Analysis',
-              'Top competitors in $selectedIndustry',
-              _buildMarketShareChart(),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Competitor Comparison
-            _buildSectionCard(
-              'Competitor Comparison',
-              'Key metrics comparison',
-              _buildCompetitorComparison(),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Competitive Landscape
-            _buildSectionCard(
-              'Competitive Landscape',
-              'Market positioning analysis',
-              _buildCompetitiveLandscape(),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Key Insights
-            _buildSectionCard(
-              'Key Insights',
-              'Strategic recommendations',
-              _buildKeyInsights(),
-            ),
-
-            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionCard(String title, String subtitle, Widget content) {
+  Widget _buildOverviewStat(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHotspotsCard() {
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
+            const Text(
+              'Business Hotspots',
+              style: TextStyle(
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            content,
+            const SizedBox(height: 12),
+            ...analytics.hotspots.take(5).map((hotspot) {
+              final saturationLevel = _getSaturationLevel(hotspot.density);
+
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: saturationLevel.color.withOpacity(0.1),
+                  child: Icon(
+                    Icons.location_on,
+                    color: saturationLevel.color,
+                    size: 20,
+                  ),
+                ),
+                title: Text(hotspot.name),
+                subtitle: Text(
+                  '${hotspot.businessCount} businesses • ${hotspot.density.toStringAsFixed(1)}/km²',
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: saturationLevel.color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    saturationLevel.label,
+                    style: TextStyle(
+                      color: saturationLevel.color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                onTap: () {
+                  _showHotspotDetails(hotspot);
+                },
+              );
+            }).toList(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMarketShareChart() {
-    final competitors = _getCompetitors();
+  Widget _buildCompetitionHeatmap() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Competition Density Heatmap',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: 20,
+                  barTouchData: BarTouchData(enabled: false),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          const areas = [
+                            'Batangas',
+                            'Lipa',
+                            'Tanauan',
+                            'San Jose',
+                            'Taal',
+                            'Balayan',
+                          ];
+                          if (value.toInt() < areas.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                areas[value.toInt()],
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            '${value.toInt()}',
+                            style: const TextStyle(fontSize: 10),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  barGroups: _buildCompetitionBarGroups(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-    return Column(
-      children: competitors.map((competitor) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: Text(
-                  competitor.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Stack(
-                  children: [
-                    Container(
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: AppColors.borderLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    Container(
-                      height: 24,
-                      width:
-                          MediaQuery.of(context).size.width *
-                          0.3 *
-                          (competitor.marketShare / 100),
-                      decoration: BoxDecoration(
-                        color: competitor.color,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 50,
-                child: Text(
-                  '${competitor.marketShare}%',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
+  List<BarChartGroupData> _buildCompetitionBarGroups() {
+    final densityData = [12, 8, 15, 6, 4, 10]; // Mock density data
+    final colors = densityData.map((density) {
+      if (density > 12) return AppColors.error;
+      if (density > 8) return AppColors.warning;
+      return AppColors.success;
+    }).toList();
+
+    return List.generate(6, (index) {
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: densityData[index].toDouble(),
+            color: colors[index],
+            width: 20,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
           ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildCompetitorComparison() {
-    final competitors = _getCompetitors();
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: const [
-          DataColumn(label: Text('Competitor')),
-          DataColumn(label: Text('Rating')),
-          DataColumn(label: Text('Reviews')),
-          DataColumn(label: Text('Price')),
-          DataColumn(label: Text('Location')),
         ],
-        rows: competitors.map((competitor) {
-          return DataRow(
-            cells: [
-              DataCell(Text(competitor.name)),
-              DataCell(
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.star, color: Colors.amber, size: 16),
-                    Text(' ${competitor.rating}'),
-                  ],
-                ),
+      );
+    });
+  }
+
+  Widget _buildMarketSaturationCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Market Saturation Analysis',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
               ),
-              DataCell(Text('${competitor.reviews}')),
-              DataCell(Text(competitor.priceRange)),
-              DataCell(Text(competitor.location)),
-            ],
-          );
-        }).toList(),
+            ),
+            const SizedBox(height: 12),
+            _buildSaturationItem(
+              'Food & Beverage',
+              'High Saturation',
+              '85% market coverage',
+              AppColors.error,
+              0.85,
+            ),
+            _buildSaturationItem(
+              'Retail & Trade',
+              'Medium Saturation',
+              '65% market coverage',
+              AppColors.warning,
+              0.65,
+            ),
+            _buildSaturationItem(
+              'Services',
+              'Low Saturation',
+              '45% market coverage',
+              AppColors.success,
+              0.45,
+            ),
+            _buildSaturationItem(
+              'Manufacturing',
+              'Very Low Saturation',
+              '25% market coverage',
+              AppColors.info,
+              0.25,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCompetitiveLandscape() {
-    return Column(
-      children: [
-        _buildLandscapeItem(
-          'Market Leader',
-          'Lipa City Restaurant',
-          'Strong brand presence, high customer loyalty',
-          AppColors.success,
-        ),
-        _buildLandscapeItem(
-          'Challenger',
-          'Batangas Coffee Co.',
-          'Innovative products, growing market share',
-          AppColors.warning,
-        ),
-        _buildLandscapeItem(
-          'Niche Player',
-          'Local Food Hub',
-          'Specialized offerings, loyal customer base',
-          AppColors.info,
-        ),
-        _buildLandscapeItem(
-          'Emerging',
-          'New Market Entrants',
-          'Innovative business models, digital focus',
-          AppColors.primary,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLandscapeItem(
-    String position,
-    String name,
-    String description,
+  Widget _buildSaturationItem(
+    String category,
+    String level,
+    String coverage,
     Color color,
+    double percentage,
   ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Text(
+                category,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(4),
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  position,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
+                  level,
+                  style: TextStyle(
+                    color: color,
                     fontWeight: FontWeight.bold,
+                    fontSize: 12,
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
-            description,
+            coverage,
             style: const TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary,
             ),
           ),
+          const SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: percentage,
+            backgroundColor: AppColors.borderLight,
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildKeyInsights() {
-    return Column(
-      children: [
-        _buildInsightItem(
-          'Market Opportunity',
-          'Growing demand for local cuisine in Batangas',
-          Icons.trending_up,
-          AppColors.success,
+  Widget _buildCompetitiveAdvantagesCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Competitive Advantages',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildAdvantageItem(
+              'Location Advantage',
+              'Strategic positioning near transport hubs',
+              Icons.location_on,
+              AppColors.primary,
+            ),
+            _buildAdvantageItem(
+              'Specialization',
+              'Niche market focus and expertise',
+              Icons.psychology,
+              AppColors.success,
+            ),
+            _buildAdvantageItem(
+              'Technology',
+              'Digital transformation and automation',
+              Icons.computer,
+              AppColors.info,
+            ),
+            _buildAdvantageItem(
+              'Customer Service',
+              'Superior customer experience',
+              Icons.people,
+              AppColors.warning,
+            ),
+          ],
         ),
-        _buildInsightItem(
-          'Competitive Advantage',
-          'Focus on authentic local ingredients and recipes',
-          Icons.star,
-          AppColors.warning,
-        ),
-        _buildInsightItem(
-          'Digital Presence',
-          'Invest in online ordering and delivery services',
-          Icons.smartphone,
-          AppColors.info,
-        ),
-        _buildInsightItem(
-          'Customer Experience',
-          'Enhance service quality and customer engagement',
-          Icons.people,
-          AppColors.primary,
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildInsightItem(
+  Widget _buildAdvantageItem(
     String title,
     String description,
     IconData icon,
     Color color,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
+          Icon(icon, color: color, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -400,8 +504,8 @@ class _CompetitorAnalysisScreenState extends State<CompetitorAnalysisScreen> {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 Text(
@@ -419,145 +523,213 @@ class _CompetitorAnalysisScreenState extends State<CompetitorAnalysisScreen> {
     );
   }
 
-  List<Competitor> _getCompetitors() {
-    switch (selectedIndustry) {
-      case 'Restaurants':
-        return [
-          Competitor(
-            'Lipa City Restaurant',
-            35,
-            4.8,
-            1247,
-            'Premium',
-            'Lipa City',
-            AppColors.primary,
-          ),
-          Competitor(
-            'Batangas Coffee Co.',
-            28,
-            4.6,
-            892,
-            'Mid-range',
-            'Batangas City',
-            AppColors.success,
-          ),
-          Competitor(
-            'Local Food Hub',
-            22,
-            4.4,
-            567,
-            'Budget',
-            'Tanauan',
-            AppColors.warning,
-          ),
-          Competitor(
-            'Others',
-            15,
-            4.2,
-            234,
-            'Various',
-            'Various',
-            AppColors.info,
-          ),
-        ];
-      case 'Retail':
-        return [
-          Competitor(
-            'Fresh Market Grocery',
-            40,
-            4.7,
-            1567,
-            'Mid-range',
-            'Batangas City',
-            AppColors.primary,
-          ),
-          Competitor(
-            'Local Mart',
-            30,
-            4.5,
-            987,
-            'Budget',
-            'Lipa City',
-            AppColors.success,
-          ),
-          Competitor(
-            'Premium Store',
-            20,
-            4.8,
-            456,
-            'Premium',
-            'Tanauan',
-            AppColors.warning,
-          ),
-          Competitor(
-            'Others',
-            10,
-            4.3,
-            123,
-            'Various',
-            'Various',
-            AppColors.info,
-          ),
-        ];
-      default:
-        return [
-          Competitor(
-            'Market Leader',
-            35,
-            4.6,
-            1000,
-            'Various',
-            'Batangas',
-            AppColors.primary,
-          ),
-          Competitor(
-            'Challenger',
-            25,
-            4.4,
-            750,
-            'Various',
-            'Batangas',
-            AppColors.success,
-          ),
-          Competitor(
-            'Niche Player',
-            20,
-            4.5,
-            500,
-            'Various',
-            'Batangas',
-            AppColors.warning,
-          ),
-          Competitor(
-            'Others',
-            20,
-            4.2,
-            250,
-            'Various',
-            'Batangas',
-            AppColors.info,
-          ),
-        ];
+  SaturationLevel _getSaturationLevel(double density) {
+    if (density > 15) {
+      return SaturationLevel('Very High', AppColors.error);
+    } else if (density > 10) {
+      return SaturationLevel('High', AppColors.warning);
+    } else if (density > 5) {
+      return SaturationLevel('Medium', AppColors.info);
+    } else {
+      return SaturationLevel('Low', AppColors.success);
     }
+  }
+
+  void _showHotspotDetails(BusinessHotspot hotspot) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.borderLight,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hotspot.name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      hotspot.municipality,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDetailRow('Category', hotspot.category),
+                    _buildDetailRow(
+                      'Business Count',
+                      '${hotspot.businessCount}',
+                    ),
+                    _buildDetailRow(
+                      'Density',
+                      '${hotspot.density.toStringAsFixed(1)}/km²',
+                    ),
+                    _buildDetailRow('Description', hotspot.description),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Competitive Analysis',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildCompetitiveInsight(
+                      'Market Saturation',
+                      _getSaturationLevel(hotspot.density).label,
+                    ),
+                    _buildCompetitiveInsight('Entry Barriers', 'Medium'),
+                    _buildCompetitiveInsight('Growth Potential', 'Limited'),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(color: AppColors.textPrimary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompetitiveInsight(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Filter Options'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButtonFormField<String>(
+              value: selectedMunicipality,
+              decoration: const InputDecoration(labelText: 'Municipality'),
+              items: ['All', ...municipalities].map((municipality) {
+                return DropdownMenuItem(
+                  value: municipality,
+                  child: Text(municipality),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedMunicipality = value!;
+                });
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: selectedCategory,
+              decoration: const InputDecoration(labelText: 'Category'),
+              items: ['All', ...businessCategories].map((category) {
+                return DropdownMenuItem(value: category, child: Text(category));
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedCategory = value!;
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-class Competitor {
-  final String name;
-  final double marketShare;
-  final double rating;
-  final int reviews;
-  final String priceRange;
-  final String location;
+class SaturationLevel {
+  final String label;
   final Color color;
 
-  Competitor(
-    this.name,
-    this.marketShare,
-    this.rating,
-    this.reviews,
-    this.priceRange,
-    this.location,
-    this.color,
-  );
+  SaturationLevel(this.label, this.color);
 }

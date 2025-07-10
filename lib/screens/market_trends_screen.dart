@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../constants/app_colors.dart';
+import '../models/analytics.dart';
+import '../services/analytics_service.dart';
+import '../data/dummy_data.dart';
 
 class MarketTrendsScreen extends StatefulWidget {
   const MarketTrendsScreen({super.key});
@@ -9,376 +13,416 @@ class MarketTrendsScreen extends StatefulWidget {
 }
 
 class _MarketTrendsScreenState extends State<MarketTrendsScreen> {
-  String selectedTimeframe = '6 Months';
-  final List<String> timeframes = ['1 Month', '3 Months', '6 Months', '1 Year'];
+  late BusinessAnalytics analytics;
+  String selectedTimeframe = 'Monthly';
+  String selectedCategory = 'All';
+
+  @override
+  void initState() {
+    super.initState();
+    analytics = AnalyticsService.generateAnalytics();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Market Trends'),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list, color: AppColors.primary),
+            onPressed: () {
+              _showFilterDialog();
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Timeframe Selector
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Market Trends',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                DropdownButton<String>(
-                  value: selectedTimeframe,
-                  items: timeframes.map((String timeframe) {
-                    return DropdownMenuItem<String>(
-                      value: timeframe,
-                      child: Text(timeframe),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedTimeframe = newValue!;
-                    });
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Growth Trends
-            _buildSectionCard(
-              'Growth Trends',
-              'SME growth in Batangas over $selectedTimeframe',
-              _buildGrowthTrends(),
-            ),
-
+            _buildOverviewCard(),
             const SizedBox(height: 16),
-
-            // Industry Performance
-            _buildSectionCard(
-              'Industry Performance',
-              'Top performing industries',
-              _buildIndustryPerformance(),
-            ),
-
+            _buildCategoryGrowthChart(),
             const SizedBox(height: 16),
-
-            // Revenue Trends
-            _buildSectionCard(
-              'Revenue Trends',
-              'Average revenue by industry',
-              _buildRevenueTrends(),
-            ),
-
+            _buildTrendingCategoriesCard(),
             const SizedBox(height: 16),
-
-            // Market Opportunities
-            _buildSectionCard(
-              'Market Opportunities',
-              'Emerging trends and opportunities',
-              _buildMarketOpportunities(),
-            ),
-
+            _buildMarketInsightsCard(),
             const SizedBox(height: 16),
-
-            // Regional Analysis
-            _buildSectionCard(
-              'Regional Analysis',
-              'Performance by city/municipality',
-              _buildRegionalAnalysis(),
-            ),
-
-            const SizedBox(height: 24),
+            _buildSeasonalTrendsCard(),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionCard(String title, String subtitle, Widget content) {
+  Widget _buildOverviewCard() {
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Market Overview',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    '+12.5%',
+                    style: TextStyle(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
-            content,
+            Row(
+              children: [
+                Expanded(
+                  child: _buildOverviewStat(
+                    'Total SMEs',
+                    analytics.totalBusinesses.toString(),
+                    Icons.business,
+                    AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildOverviewStat(
+                    'Growth Rate',
+                    '+12.5%',
+                    Icons.trending_up,
+                    AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildOverviewStat(
+                    'Avg Rating',
+                    '4.3/5.0',
+                    Icons.star,
+                    AppColors.warning,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildOverviewStat(
+                    'Active Areas',
+                    analytics.municipalityData.length.toString(),
+                    Icons.location_on,
+                    AppColors.info,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildGrowthTrends() {
-    final trends = _getGrowthTrends();
-
-    return Column(
-      children: trends.map((trend) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: Text(
-                  trend.metric,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: trend.value / 100,
-                        backgroundColor: AppColors.borderLight,
-                        valueColor: AlwaysStoppedAnimation<Color>(trend.color),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${trend.value}%',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: trend.color,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildIndustryPerformance() {
-    final industries = _getIndustryPerformance();
-
-    return Column(
-      children: industries.map((industry) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.borderLight),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: industry.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(industry.icon, color: industry.color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      industry.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    Text(
-                      '${industry.growth}% growth',
-                      style: TextStyle(
-                        color: industry.growth >= 0
-                            ? AppColors.success
-                            : AppColors.error,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                '₱${industry.revenue}M',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildRevenueTrends() {
-    final revenues = _getRevenueTrends();
-
-    return Column(
-      children: revenues.map((revenue) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: Text(
-                  revenue.industry,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: revenue.color,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '₱${revenue.amount}M',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildMarketOpportunities() {
+  Widget _buildOverviewStat(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
-        _buildOpportunityItem(
-          'Digital Transformation',
-          'Growing demand for online services and e-commerce',
-          '+25%',
-          Icons.trending_up,
-          AppColors.success,
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
-        _buildOpportunityItem(
-          'Local Tourism',
-          'Increased focus on local and sustainable tourism',
-          '+18%',
-          Icons.location_on,
-          AppColors.info,
-        ),
-        _buildOpportunityItem(
-          'Food & Beverage',
-          'Rising demand for local cuisine and specialty foods',
-          '+22%',
-          Icons.restaurant,
-          AppColors.warning,
-        ),
-        _buildOpportunityItem(
-          'Health & Wellness',
-          'Growing health-conscious consumer market',
-          '+15%',
-          Icons.favorite,
-          AppColors.primary,
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
       ],
     );
   }
 
-  Widget _buildOpportunityItem(
+  Widget _buildCategoryGrowthChart() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Category Growth Trends',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: 100,
+                  barTouchData: BarTouchData(enabled: false),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          const categories = [
+                            'Food',
+                            'Retail',
+                            'Services',
+                            'Manufacturing',
+                            'Agriculture',
+                            'Tourism',
+                          ];
+                          if (value.toInt() < categories.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                categories[value.toInt()],
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            '${value.toInt()}%',
+                            style: const TextStyle(fontSize: 10),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  barGroups: _buildBarGroups(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<BarChartGroupData> _buildBarGroups() {
+    final growthData = [25, 18, 32, 15, 8, 22]; // Mock growth percentages
+    final colors = [
+      AppColors.primary,
+      AppColors.success,
+      AppColors.warning,
+      AppColors.info,
+      AppColors.error,
+      const Color(0xFF9C27B0),
+    ];
+
+    return List.generate(6, (index) {
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: growthData[index].toDouble(),
+            color: colors[index],
+            width: 20,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildTrendingCategoriesCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Trending Categories',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...analytics.topCategories.asMap().entries.map((entry) {
+              final index = entry.key;
+              final category = entry.value;
+              final growth = [
+                12.5,
+                8.3,
+                15.7,
+                6.2,
+                4.1,
+              ][index]; // Mock growth data
+
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  child: Text(
+                    '${index + 1}',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                title: Text(category),
+                subtitle: Text(
+                  '${analytics.categoryCount[category]} businesses',
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '+${growth.toStringAsFixed(1)}%',
+                    style: const TextStyle(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMarketInsightsCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Market Insights',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildInsightItem(
+              'Food & Beverage sector shows 25% growth',
+              'Driven by increasing tourism and local demand',
+              Icons.restaurant,
+              AppColors.primary,
+            ),
+            _buildInsightItem(
+              'Services sector expanding rapidly',
+              'IT and professional services growing at 32%',
+              Icons.miscellaneous_services,
+              AppColors.success,
+            ),
+            _buildInsightItem(
+              'Manufacturing stable growth',
+              'Traditional industries maintaining steady pace',
+              Icons.factory,
+              AppColors.warning,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInsightItem(
     String title,
     String description,
-    String growth,
     IconData icon,
     Color color,
   ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
+          Icon(icon, color: color, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    Text(
-                      growth,
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                const SizedBox(height: 4),
                 Text(
                   description,
                   style: const TextStyle(
@@ -394,150 +438,145 @@ class _MarketTrendsScreenState extends State<MarketTrendsScreen> {
     );
   }
 
-  Widget _buildRegionalAnalysis() {
-    final regions = _getRegionalAnalysis();
-
-    return Column(
-      children: regions.map((region) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.borderLight),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  region.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
+  Widget _buildSeasonalTrendsCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Seasonal Trends',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 150,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(show: false),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          const months = [
+                            'Jan',
+                            'Feb',
+                            'Mar',
+                            'Apr',
+                            'May',
+                            'Jun',
+                          ];
+                          if (value.toInt() < months.length) {
+                            return Text(
+                              months[value.toInt()],
+                              style: const TextStyle(fontSize: 10),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            '${value.toInt()}',
+                            style: const TextStyle(fontSize: 10),
+                          );
+                        },
+                      ),
+                    ),
                   ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: [
+                        const FlSpot(0, 3),
+                        const FlSpot(1, 4),
+                        const FlSpot(2, 6),
+                        const FlSpot(3, 5),
+                        const FlSpot(4, 7),
+                        const FlSpot(5, 8),
+                      ],
+                      isCurved: true,
+                      color: AppColors.primary,
+                      barWidth: 3,
+                      dotData: FlDotData(show: true),
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                '${region.smeCount} SMEs',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                '₱${region.revenue}M',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  List<GrowthTrend> _getGrowthTrends() {
-    return [
-      GrowthTrend('New SMEs', 15, AppColors.success),
-      GrowthTrend('Revenue Growth', 12, AppColors.primary),
-      GrowthTrend('Employment', 8, AppColors.info),
-      GrowthTrend('Digital Adoption', 25, AppColors.warning),
-    ];
-  }
-
-  List<IndustryPerformance> _getIndustryPerformance() {
-    return [
-      IndustryPerformance(
-        'Restaurants',
-        18,
-        45.2,
-        Icons.restaurant,
-        AppColors.primary,
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Filter Options'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButtonFormField<String>(
+              value: selectedTimeframe,
+              decoration: const InputDecoration(labelText: 'Timeframe'),
+              items: ['Daily', 'Weekly', 'Monthly', 'Yearly'].map((timeframe) {
+                return DropdownMenuItem(
+                  value: timeframe,
+                  child: Text(timeframe),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedTimeframe = value!;
+                });
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: selectedCategory,
+              decoration: const InputDecoration(labelText: 'Category'),
+              items: ['All', ...businessCategories].map((category) {
+                return DropdownMenuItem(value: category, child: Text(category));
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedCategory = value!;
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
       ),
-      IndustryPerformance(
-        'Retail',
-        12,
-        38.7,
-        Icons.shopping_cart,
-        AppColors.success,
-      ),
-      IndustryPerformance(
-        'Services',
-        15,
-        32.1,
-        Icons.miscellaneous_services,
-        AppColors.info,
-      ),
-      IndustryPerformance(
-        'Manufacturing',
-        8,
-        28.4,
-        Icons.factory,
-        AppColors.warning,
-      ),
-    ];
+    );
   }
-
-  List<RevenueTrend> _getRevenueTrends() {
-    return [
-      RevenueTrend('Restaurants', 45.2, AppColors.primary),
-      RevenueTrend('Retail', 38.7, AppColors.success),
-      RevenueTrend('Services', 32.1, AppColors.info),
-      RevenueTrend('Manufacturing', 28.4, AppColors.warning),
-    ];
-  }
-
-  List<RegionalData> _getRegionalAnalysis() {
-    return [
-      RegionalData('Batangas City', 245, 45.2),
-      RegionalData('Lipa City', 189, 38.7),
-      RegionalData('Tanauan City', 156, 32.1),
-      RegionalData('San Jose', 134, 28.4),
-      RegionalData('Others', 523, 65.8),
-    ];
-  }
-}
-
-class GrowthTrend {
-  final String metric;
-  final double value;
-  final Color color;
-
-  GrowthTrend(this.metric, this.value, this.color);
-}
-
-class IndustryPerformance {
-  final String name;
-  final double growth;
-  final double revenue;
-  final IconData icon;
-  final Color color;
-
-  IndustryPerformance(
-    this.name,
-    this.growth,
-    this.revenue,
-    this.icon,
-    this.color,
-  );
-}
-
-class RevenueTrend {
-  final String industry;
-  final double amount;
-  final Color color;
-
-  RevenueTrend(this.industry, this.amount, this.color);
-}
-
-class RegionalData {
-  final String name;
-  final int smeCount;
-  final double revenue;
-
-  RegionalData(this.name, this.smeCount, this.revenue);
 }
