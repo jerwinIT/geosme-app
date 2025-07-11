@@ -4,6 +4,7 @@ import '../constants/app_colors.dart';
 import '../models/analytics.dart';
 import '../services/analytics_service.dart';
 import '../data/dummy_data.dart';
+import '../services/navigation_service.dart';
 
 class MarketTrendsScreen extends StatefulWidget {
   const MarketTrendsScreen({super.key});
@@ -32,7 +33,7 @@ class _MarketTrendsScreenState extends State<MarketTrendsScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
         actions: [
           IconButton(
@@ -350,7 +351,7 @@ class _MarketTrendsScreenState extends State<MarketTrendsScreen> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

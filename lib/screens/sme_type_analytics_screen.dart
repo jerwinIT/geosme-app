@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../constants/app_colors.dart';
 import '../models/analytics.dart';
 import '../services/analytics_service.dart';
+import '../services/navigation_service.dart';
 
 class SmeTypeAnalyticsScreen extends StatefulWidget {
   const SmeTypeAnalyticsScreen({super.key});
@@ -29,7 +30,7 @@ class _SmeTypeAnalyticsScreenState extends State<SmeTypeAnalyticsScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
       ),
       body: SingleChildScrollView(
@@ -305,7 +306,7 @@ class _SmeTypeAnalyticsScreenState extends State<SmeTypeAnalyticsScreen> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -373,7 +374,7 @@ class _SmeTypeAnalyticsScreenState extends State<SmeTypeAnalyticsScreen> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -423,7 +424,7 @@ class _SmeTypeAnalyticsScreenState extends State<SmeTypeAnalyticsScreen> {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

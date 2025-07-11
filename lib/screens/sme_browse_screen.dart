@@ -4,6 +4,7 @@ import '../data/dummy_data.dart';
 import '../models/business.dart';
 import '../widgets/business_card.dart';
 import 'business_detail_screen.dart';
+import '../services/navigation_service.dart';
 
 class SmeBrowseScreen extends StatefulWidget {
   const SmeBrowseScreen({super.key});
@@ -76,7 +77,7 @@ class _SmeBrowseScreenState extends State<SmeBrowseScreen> {
         title: const Text('Browse SMEs'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
         actions: [
           IconButton(

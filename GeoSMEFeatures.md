@@ -67,13 +67,6 @@ A web application designed to visualize and analyze Small and Medium Enterprise 
 
 ---
 
-### 🚏 Accessibility & Proximity
-
-- Number of SMEs within **5–10 minutes** from highways, terminals, or transport hubs.
-- Highlights businesses near **schools**, **tourist zones**, and **government centers**.
-
----
-
 ## 📌 Purpose
 
 This platform aims to empower:
@@ -83,5 +76,3 @@ This platform aims to empower:
 - 🧭 **Consumers** to explore nearby services and businesses.
 
 ---
-
-Let me know if you’d like a downloadable markdown file or want to add a tech stack, contribution guide, or deployment instructions section.

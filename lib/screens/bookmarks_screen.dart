@@ -5,6 +5,8 @@ import '../services/bookmark_service.dart';
 import '../data/dummy_data.dart';
 import '../widgets/business_card.dart';
 import 'business_detail_screen.dart';
+import 'sme_browse_screen.dart';
+import '../services/navigation_service.dart';
 
 class BookmarksScreen extends StatefulWidget {
   const BookmarksScreen({super.key});
@@ -147,7 +149,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
         actions: [
           IconButton(
@@ -336,7 +338,11 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
           if (searchQuery.isEmpty && selectedCategory == 'All')
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.pop(context);
+                NavigationService.navigateTo(
+                  context,
+                  const SmeBrowseScreen(),
+                  routeName: 'sme_browse',
+                );
               },
               icon: const Icon(Icons.explore),
               label: const Text('Explore Businesses'),

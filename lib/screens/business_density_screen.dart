@@ -3,6 +3,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../constants/app_colors.dart';
 import '../data/dummy_data.dart';
 import '../models/business.dart';
+import '../services/maps_service.dart';
+import '../services/navigation_service.dart';
 
 class BusinessDensityScreen extends StatefulWidget {
   const BusinessDensityScreen({super.key});
@@ -26,11 +28,22 @@ class _BusinessDensityScreenState extends State<BusinessDensityScreen> {
   void initState() {
     super.initState();
     municipalities = ['All', ...municipalities];
-    _initializeMap();
+    _initializeMapWithErrorHandling();
   }
 
-  void _initializeMap() {
-    _updateMarkers();
+  void _initializeMapWithErrorHandling() {
+    try {
+      _updateMarkers();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(MapsService.getMapErrorMessage(e.toString())),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   void _updateMarkers() {
@@ -285,7 +298,7 @@ class _BusinessDensityScreenState extends State<BusinessDensityScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
         actions: [
           IconButton(

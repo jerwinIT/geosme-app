@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../models/analytics.dart';
 import '../services/analytics_service.dart';
+import '../services/navigation_service.dart';
 
 class HotspotAnalyticsScreen extends StatefulWidget {
   const HotspotAnalyticsScreen({super.key});
@@ -28,7 +29,7 @@ class _HotspotAnalyticsScreenState extends State<HotspotAnalyticsScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
       ),
       body: SingleChildScrollView(
@@ -191,7 +192,7 @@ class _HotspotAnalyticsScreenState extends State<HotspotAnalyticsScreen> {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

@@ -3,6 +3,7 @@ import '../constants/app_colors.dart';
 import '../data/user_credentials.dart';
 import 'login_screen.dart';
 import 'dashboard_screen.dart';
+import '../services/navigation_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -86,7 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
       ),
       body: SafeArea(

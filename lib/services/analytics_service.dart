@@ -598,7 +598,7 @@ class AnalyticsService {
             growthTrends.municipalityGrowthRates[muni1]! /
             growthTrends.municipalityGrowthRates[muni2]!;
 
-        municipalityComparisons['${muni1}_vs_${muni2}'] = {
+        municipalityComparisons['${muni1}_vs_$muni2'] = {
           'density': densityComparison,
           'growth': growthComparison,
           'accessibility':

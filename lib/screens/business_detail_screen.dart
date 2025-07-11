@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../models/business.dart';
 import '../services/nearby_business_service.dart';
+import '../services/maps_service.dart';
+import '../services/navigation_service.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   final Business business;
@@ -193,7 +195,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
             ),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => NavigationService.smartPop(context),
             ),
             actions: [
               IconButton(
@@ -912,31 +914,28 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
     );
   }
 
-  void _openInGoogleMaps() {
-    final lat = widget.business.latitude;
-    final lng = widget.business.longitude;
-    final name = Uri.encodeComponent(widget.business.name);
-    final address = Uri.encodeComponent(widget.business.address);
-
-    final url =
-        'https://www.google.com/maps/search/?api=1&query=$lat,$lng&query_place_id=$name';
-
-    // For web, we can use url_launcher package
-    // For now, show a snackbar with the URL
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Opening Google Maps for ${widget.business.name}...'),
-        backgroundColor: AppColors.success,
-        action: SnackBarAction(
-          label: 'Copy URL',
-          onPressed: () {
-            // TODO: Implement clipboard functionality
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('URL copied: $url')));
-          },
+  void _openInGoogleMaps() async {
+    // Validate coordinates first
+    if (!MapsService.isValidCoordinates(
+      widget.business.latitude,
+      widget.business.longitude,
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid location coordinates'),
+          backgroundColor: AppColors.error,
         ),
-      ),
+      );
+      return;
+    }
+
+    // Use the maps service with proper error handling
+    await MapsService.openGoogleMaps(
+      latitude: widget.business.latitude,
+      longitude: widget.business.longitude,
+      businessName: widget.business.name,
+      address: widget.business.address,
+      context: context,
     );
   }
 

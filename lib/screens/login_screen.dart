@@ -4,6 +4,7 @@ import '../data/user_credentials.dart';
 import 'register_screen.dart';
 import 'dashboard_screen.dart';
 import 'landing_screen.dart';
+import '../services/navigation_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -78,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
       ),
       body: SafeArea(

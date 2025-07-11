@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../models/analytics.dart';
 import '../services/analytics_service.dart';
+import '../services/navigation_service.dart';
 
 class OpportunityZonesAnalyticsScreen extends StatefulWidget {
   const OpportunityZonesAnalyticsScreen({super.key});
@@ -30,7 +31,7 @@ class _OpportunityZonesAnalyticsScreenState
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
       ),
       body: SingleChildScrollView(
@@ -112,7 +113,11 @@ class _OpportunityZonesAnalyticsScreenState
                 ),
                 _buildStatItem(
                   'Avg Demand',
-                  '${(analytics.opportunityZones.map((z) => z.potentialDemand).reduce((a, b) => a + b) / analytics.opportunityZones.length).toStringAsFixed(0)}',
+                  (analytics.opportunityZones
+                              .map((z) => z.potentialDemand)
+                              .reduce((a, b) => a + b) /
+                          analytics.opportunityZones.length)
+                      .toStringAsFixed(0),
                   Icons.analytics,
                 ),
               ],
@@ -196,7 +201,7 @@ class _OpportunityZonesAnalyticsScreenState
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

@@ -11,6 +11,7 @@ import 'competitor_analysis_screen.dart';
 import 'sme_browse_screen.dart';
 import 'bookmarks_screen.dart';
 import 'analytics_navigation_screen.dart';
+import '../services/navigation_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -61,17 +62,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.bookmark, color: AppColors.primary),
             onPressed: () {
-              Navigator.push(
+              NavigationService.navigateTo(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const BookmarksScreen(),
-                ),
+                const BookmarksScreen(),
+                routeName: 'bookmarks',
               );
             },
           ),
@@ -180,29 +180,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem(
-                  'Near Highways',
-                  analytics.accessibility.totalBusinessesNearHighways
-                      .toString(),
-                  Icons.route,
-                ),
-                _buildStatItem(
-                  'Near Schools',
-                  analytics.accessibility.totalBusinessesNearSchools.toString(),
-                  Icons.school,
-                ),
-                _buildStatItem(
-                  'Tourist Areas',
-                  analytics.accessibility.totalBusinessesNearTouristZones
-                      .toString(),
-                  Icons.attractions,
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -247,7 +224,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Expanded(
           child: _buildQuickStatCard(
             'Avg Rating',
-            '${analytics.averageRatingByCategory.values.isNotEmpty ? (analytics.averageRatingByCategory.values.reduce((a, b) => a + b) / analytics.averageRatingByCategory.length).toStringAsFixed(1) : '0.0'}',
+            analytics.averageRatingByCategory.values.isNotEmpty
+                ? (analytics.averageRatingByCategory.values.reduce(
+                            (a, b) => a + b,
+                          ) /
+                          analytics.averageRatingByCategory.length)
+                      .toStringAsFixed(1)
+                : '0.0',
             Icons.star,
             AppColors.warning,
           ),
@@ -412,7 +395,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -488,7 +471,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -517,10 +500,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CompetitorAnalysisScreen(),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Map functionality coming soon!'),
+                        backgroundColor: AppColors.info,
+                        duration: Duration(seconds: 2),
                       ),
                     );
                   },
@@ -545,7 +529,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -585,7 +569,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // Navigate to opportunity details
                 },
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -614,11 +598,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
+                    NavigationService.navigateTo(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const AnalyticsNavigationScreen(),
-                      ),
+                      const AnalyticsNavigationScreen(),
+                      routeName: 'analytics',
                     );
                   },
                   child: const Text('View All Analytics'),
@@ -640,57 +623,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: _buildOverviewStat(
                     'Avg Rating',
-                    '${analytics.averageRatingByCategory.values.isNotEmpty ? (analytics.averageRatingByCategory.values.reduce((a, b) => a + b) / analytics.averageRatingByCategory.length).toStringAsFixed(1) : '0.0'}',
+                    analytics.averageRatingByCategory.values.isNotEmpty
+                        ? (analytics.averageRatingByCategory.values.reduce(
+                                    (a, b) => a + b,
+                                  ) /
+                                  analytics.averageRatingByCategory.length)
+                              .toStringAsFixed(1)
+                        : '0.0',
                     Icons.star,
                     AppColors.warning,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildOverviewStat(
-                    'Near Highways',
-                    analytics.accessibility.totalBusinessesNearHighways
-                        .toString(),
-                    Icons.route,
-                    AppColors.primary,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildOverviewStat(
-                    'Near Schools',
-                    analytics.accessibility.totalBusinessesNearSchools
-                        .toString(),
-                    Icons.school,
-                    AppColors.success,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildOverviewStat(
-                    'Tourist Zones',
-                    analytics.accessibility.totalBusinessesNearTouristZones
-                        .toString(),
-                    Icons.attractions,
-                    AppColors.warning,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildOverviewStat(
-                    'Transport Hubs',
-                    analytics.accessibility.totalBusinessesNearTransportHubs
-                        .toString(),
-                    Icons.local_shipping,
-                    AppColors.info,
                   ),
                 ),
               ],
@@ -748,25 +689,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onTap: (index) {
         switch (index) {
           case 1:
-            Navigator.push(
+            NavigationService.navigateTo(
               context,
-              MaterialPageRoute(builder: (context) => const SmeBrowseScreen()),
+              const SmeBrowseScreen(),
+              routeName: 'sme_browse',
             );
             break;
           case 2:
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const BusinessDensityScreen(),
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Map functionality coming soon!'),
+                backgroundColor: AppColors.info,
+                duration: Duration(seconds: 2),
               ),
             );
             break;
           case 3:
-            Navigator.push(
+            NavigationService.navigateTo(
               context,
-              MaterialPageRoute(
-                builder: (context) => const AnalyticsNavigationScreen(),
-              ),
+              const AnalyticsNavigationScreen(),
+              routeName: 'analytics',
             );
             break;
         }

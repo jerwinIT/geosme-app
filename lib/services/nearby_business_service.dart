@@ -188,12 +188,15 @@ class NearbyBusinessService {
     String marketSaturation,
     String competitivePressure,
   ) {
-    if (marketSaturation == 'Low' && competitivePressure == 'Low')
+    if (marketSaturation == 'Low' && competitivePressure == 'Low') {
       return 'Very High';
-    if (marketSaturation == 'Low' || competitivePressure == 'Low')
+    }
+    if (marketSaturation == 'Low' || competitivePressure == 'Low') {
       return 'High';
-    if (marketSaturation == 'Medium' && competitivePressure == 'Medium')
+    }
+    if (marketSaturation == 'Medium' && competitivePressure == 'Medium') {
       return 'Medium';
+    }
     return 'Low';
   }
 }

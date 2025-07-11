@@ -6,7 +6,7 @@ import 'hotspot_analytics_screen.dart';
 import 'user_engagement_analytics_screen.dart';
 import 'opportunity_zones_analytics_screen.dart';
 import 'comparative_analytics_screen.dart';
-import 'accessibility_analytics_screen.dart';
+import '../services/navigation_service.dart';
 
 class AnalyticsNavigationScreen extends StatelessWidget {
   const AnalyticsNavigationScreen({super.key});
@@ -27,7 +27,7 @@ class AnalyticsNavigationScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
       ),
       body: Padding(
@@ -94,13 +94,6 @@ class AnalyticsNavigationScreen extends StatelessWidget {
         'icon': Icons.compare_arrows,
         'color': AppColors.primary,
         'screen': const ComparativeAnalyticsScreen(),
-      },
-      {
-        'title': 'Accessibility',
-        'subtitle': 'Proximity analysis',
-        'icon': Icons.route,
-        'color': AppColors.warning,
-        'screen': const AccessibilityAnalyticsScreen(),
       },
     ];
 

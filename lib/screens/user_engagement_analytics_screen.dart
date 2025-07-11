@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../models/analytics.dart';
 import '../services/analytics_service.dart';
+import '../services/navigation_service.dart';
 
 class UserEngagementAnalyticsScreen extends StatefulWidget {
   const UserEngagementAnalyticsScreen({super.key});
@@ -30,7 +31,7 @@ class _UserEngagementAnalyticsScreenState
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
       ),
       body: SingleChildScrollView(
@@ -175,7 +176,7 @@ class _UserEngagementAnalyticsScreenState
                 subtitle: Text('$viewCount views'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -211,7 +212,7 @@ class _UserEngagementAnalyticsScreenState
                 subtitle: Text('$bookmarkCount bookmarks'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -248,7 +249,7 @@ class _UserEngagementAnalyticsScreenState
                 subtitle: const Text('High user activity'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

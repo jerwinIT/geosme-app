@@ -4,6 +4,7 @@ import '../constants/app_colors.dart';
 import '../models/analytics.dart';
 import '../services/analytics_service.dart';
 import '../data/dummy_data.dart';
+import '../services/navigation_service.dart';
 
 class CompetitorAnalysisScreen extends StatefulWidget {
   const CompetitorAnalysisScreen({super.key});
@@ -33,7 +34,7 @@ class _CompetitorAnalysisScreenState extends State<CompetitorAnalysisScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => NavigationService.smartPop(context),
         ),
         actions: [
           IconButton(
@@ -214,7 +215,7 @@ class _CompetitorAnalysisScreenState extends State<CompetitorAnalysisScreen> {
                   _showHotspotDetails(hotspot);
                 },
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
