@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../models/business.dart';
+import '../services/nearby_business_service.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   final Business business;
@@ -18,6 +19,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
   final TextEditingController _commentController = TextEditingController();
   final List<Comment> comments = [];
   int currentImageIndex = 0;
+  double selectedRadius = 1.0; // Default 1km radius
+  Map<String, dynamic>? competitorInsights;
 
   // Sample gallery images
   final List<String> galleryImages = [
@@ -31,7 +34,10 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(
+      length: 5,
+      vsync: this,
+    ); // Increased to 5 tabs
 
     // Add sample comments
     comments.addAll([
@@ -55,6 +61,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
         date: DateTime.now().subtract(const Duration(days: 1)),
       ),
     ]);
+
+    // Load competitor insights
+    _loadCompetitorInsights();
   }
 
   @override
@@ -62,6 +71,15 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
     _tabController.dispose();
     _commentController.dispose();
     super.dispose();
+  }
+
+  void _loadCompetitorInsights() {
+    setState(() {
+      competitorInsights = NearbyBusinessService.getCompetitorInsights(
+        widget.business,
+        selectedRadius,
+      );
+    });
   }
 
   void _addComment() {
@@ -332,7 +350,73 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
                     ],
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+
+                  // Quick Competitor Insights
+                  if (competitorInsights != null) ...[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.analytics,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Competitive Landscape',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${competitorInsights!['competitorCount']} competitors within ${selectedRadius.toStringAsFixed(1)}km • ${competitorInsights!['marketSaturation']} saturation',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getOpportunityColor(
+                                  competitorInsights!['opportunityLevel'],
+                                ).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                competitorInsights!['opportunityLevel'],
+                                style: TextStyle(
+                                  color: _getOpportunityColor(
+                                    competitorInsights!['opportunityLevel'],
+                                  ),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  const SizedBox(height: 8),
 
                   // Tab Bar
                   TabBar(
@@ -342,6 +426,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
                       Tab(text: 'Reviews'),
                       Tab(text: 'About'),
                       Tab(text: 'Map'),
+                      Tab(text: 'Competitors'),
                     ],
                     labelColor: AppColors.primary,
                     unselectedLabelColor: AppColors.textSecondary,
@@ -361,6 +446,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
                 _buildReviewsTab(),
                 _buildAboutTab(),
                 _buildMapTab(),
+                _buildCompetitorsTab(),
               ],
             ),
           ),
@@ -632,12 +718,12 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Location',
+            'Location & Competitors',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
 
-          // Map Placeholder
+          // Map Placeholder with Competitor Info
           Container(
             height: 300,
             decoration: BoxDecoration(
@@ -653,7 +739,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
                       Icon(Icons.map, size: 64, color: AppColors.textLight),
                       const SizedBox(height: 16),
                       const Text(
-                        'Map View',
+                        'Interactive Map',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -662,9 +748,31 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Interactive map coming soon!',
+                        'Map with competitor locations coming soon!',
                         style: TextStyle(color: AppColors.textSecondary),
+                        textAlign: TextAlign.center,
                       ),
+                      if (competitorInsights != null) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            '${competitorInsights!['competitorCount']} competitors within ${selectedRadius.toStringAsFixed(1)}km',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -712,6 +820,66 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
                   ),
                 ],
               ),
+            ),
+          ),
+
+          // Competitor Map Legend
+          if (competitorInsights != null &&
+              competitorInsights!['nearbyBusinesses'] != null &&
+              (competitorInsights!['nearbyBusinesses'] as List).isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Map Legend',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildLegendItem(
+                      Icons.location_on,
+                      AppColors.primary,
+                      'This Business',
+                    ),
+                    _buildLegendItem(
+                      Icons.business,
+                      AppColors.warning,
+                      'Competitors',
+                    ),
+                    _buildLegendItem(
+                      Icons.radio_button_unchecked,
+                      AppColors.success,
+                      '${selectedRadius.toStringAsFixed(1)}km Radius',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(IconData icon, Color color, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -837,6 +1005,349 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen>
             : AppColors.warning,
       ),
     );
+  }
+
+  Widget _buildCompetitorsTab() {
+    if (competitorInsights == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Radius Selector
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Search Radius',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Slider(
+                          value: selectedRadius,
+                          min: 0.5,
+                          max: 5.0,
+                          divisions: 9,
+                          label: '${selectedRadius.toStringAsFixed(1)}km',
+                          onChanged: (value) {
+                            setState(() {
+                              selectedRadius = value;
+                            });
+                            _loadCompetitorInsights();
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        '${selectedRadius.toStringAsFixed(1)}km',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Competitor Insights Overview
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Competitive Analysis',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildInsightRow(
+                    'Competitors Found',
+                    '${competitorInsights!['competitorCount']}',
+                    Icons.business,
+                    AppColors.primary,
+                  ),
+                  _buildInsightRow(
+                    'Average Rating',
+                    '${competitorInsights!['avgRating'].toStringAsFixed(1)}/5.0',
+                    Icons.star,
+                    Colors.amber,
+                  ),
+                  _buildInsightRow(
+                    'Common Price Range',
+                    competitorInsights!['avgPriceRange'],
+                    Icons.attach_money,
+                    AppColors.success,
+                  ),
+                  _buildInsightRow(
+                    'Market Saturation',
+                    competitorInsights!['marketSaturation'],
+                    Icons.density_medium,
+                    _getSaturationColor(
+                      competitorInsights!['marketSaturation'],
+                    ),
+                  ),
+                  _buildInsightRow(
+                    'Competitive Pressure',
+                    competitorInsights!['competitivePressure'],
+                    Icons.trending_up,
+                    _getPressureColor(
+                      competitorInsights!['competitivePressure'],
+                    ),
+                  ),
+                  _buildInsightRow(
+                    'Opportunity Level',
+                    competitorInsights!['opportunityLevel'],
+                    Icons.lightbulb,
+                    _getOpportunityColor(
+                      competitorInsights!['opportunityLevel'],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Nearby Competitors List
+          if (competitorInsights!['nearbyBusinesses'] != null &&
+              (competitorInsights!['nearbyBusinesses'] as List).isNotEmpty) ...[
+            const Text(
+              'Nearby Competitors',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...(competitorInsights!['nearbyBusinesses'] as List).map(
+              (business) => _buildCompetitorCard(business as Business),
+            ),
+          ] else ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.location_off,
+                      size: 48,
+                      color: AppColors.textLight,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'No competitors found',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'No businesses in the same category found within the selected radius.',
+                      style: TextStyle(color: AppColors.textSecondary),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInsightRow(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompetitorCard(Business competitor) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: AppColors.primary.withOpacity(0.1),
+          child: Text(
+            competitor.name[0],
+            style: TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          competitor.name,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(competitor.address),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                ...List.generate(5, (index) {
+                  return Icon(
+                    index < competitor.rating ? Icons.star : Icons.star_border,
+                    color: Colors.amber,
+                    size: 16,
+                  );
+                }),
+                const SizedBox(width: 8),
+                Text(
+                  '${competitor.rating} (${competitor.reviewCount} reviews)',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+          ],
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              competitor.priceRange,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                competitor.businessSize,
+                style: TextStyle(
+                  color: AppColors.success,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BusinessDetailScreen(business: competitor),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Color _getSaturationColor(String saturation) {
+    switch (saturation) {
+      case 'Very High':
+        return AppColors.error;
+      case 'High':
+        return AppColors.warning;
+      case 'Medium':
+        return AppColors.info;
+      case 'Low':
+        return AppColors.success;
+      default:
+        return AppColors.textSecondary;
+    }
+  }
+
+  Color _getPressureColor(String pressure) {
+    switch (pressure) {
+      case 'Very High':
+        return AppColors.error;
+      case 'High':
+        return AppColors.warning;
+      case 'Medium':
+        return AppColors.info;
+      case 'Low':
+        return AppColors.success;
+      default:
+        return AppColors.textSecondary;
+    }
+  }
+
+  Color _getOpportunityColor(String opportunity) {
+    switch (opportunity) {
+      case 'Very High':
+        return AppColors.success;
+      case 'High':
+        return AppColors.info;
+      case 'Medium':
+        return AppColors.warning;
+      case 'Low':
+        return AppColors.error;
+      default:
+        return AppColors.textSecondary;
+    }
   }
 
   void _shareBusiness() {
