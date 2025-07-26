@@ -305,13 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Email: admin@geosme.com | Password: admin123',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
+
                       const Text(
                         'Email: user@geosme.com | Password: user123',
                         style: TextStyle(
